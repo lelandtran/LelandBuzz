@@ -1,0 +1,16 @@
+TWIML Notes
+
+Program Flow:
+	1. Client dials Twilio phone number
+	2. Twilio sends an HTTP request to the URL associated with that phone number.
+	3. Website returns an XML response with a Twilio instruction set.
+	4. Twilio interpreter reads through the instruction set until reaching the bottom, at which point, it disconnects the call. 
+		a. If a verb element has its "action" attribute set to a URL, the control flow switches to the Response TwiML received from that URL
+
+Twilio.TwiML Helper Library
+	"Frees you from having to manually create well-formed XML responses. Instead the libarary provides you with a set of simple methods which you can use to get TwiML elements and attributes"
+	To use: 
+		1. Import from Maven repository
+		2. Create an instance of the TwilioResponse class
+		3. Call helper methods like .Say(String s) on the instance
+		4. To return, write the instance using toString() to the HTTP Response. Set the ContentType to text/xml.
