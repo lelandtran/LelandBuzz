@@ -13,8 +13,14 @@ import com.twilio.sdk.verbs.TwiMLResponse;
 @Controller 
 public class PhoneBuzzController {
 	
+	@RequestMapping("/")
+	public String home() {
+		
+		return "index";
+	}
+	
 	@RequestMapping("/simple")
-	public ResponseEntity<?> simplePB() {
+	public ResponseEntity<?> simple() {
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		HttpHeaders headers = new HttpHeaders();
 		
