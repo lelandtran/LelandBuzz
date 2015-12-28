@@ -45,29 +45,23 @@ public class PhoneBuzzController {
 		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		HttpHeaders headers = new HttpHeaders();
-		
-		/*
-	    if (xTwiSig == null) {
-	    	String resbody = new String();
-	    	resbody = resbody + "Hashed: " + hmacSha1Base64(AUTH_TOKEN, getReqURL(req));
-	    	resbody = resbody + "AuthToken: " + AUTH_TOKEN + "\n";
-	    	resbody = resbody + "RequestedURL: " + getReqURL(req) + "\n";
-	    	resbody = resbody + HmacUtils.hmacSha1Hex(AUTH_TOKEN, getReqURL(req));
-	    			
-	    	return new ResponseEntity<String>(resbody, HttpStatus.BAD_REQUEST);
-	    }
-	    */
+
 	    		
 		try {
-			/* Obstacle: Could not figure out how to nest a Say within a Gather using Java helper library */
-			if(!validateRequest(req)) {
-				throw new TwiMLException(X_TWI_SIG + " mismatch");
-			}
+			
+			/* NOTE: Below code throws an exception if there is a signature mismatch
+			 * This is a circumstance I've not really encountered so I'm not sure what 
+			 * typical industry protocol is, whether it's best to have the validation
+			 * method throw an exception or instead return a boolean which I would check
+			 * in this method (simple()) as the caller and throw an exception on mismatch.
+			 */
+			validateRequest(req);
 			
 			TwiMLResponse twiml = new TwiMLResponse();
 			twiml.append(new Say("Welcome to Leland's PhoneBuzz."));
 			twiml.append(new Say("After the beep, enter a number up to " + MAX_DIGITS + " digits followed by the pound key to hear FizzBuzz up to that number."));
 			twiml.append(new Play(BEEP_MP3));
+			/* NOTE: Could not figure out how to nest a Say within a Gather using Java helper library */
 			Gather gather = new Gather();
 			gather.setNumDigits(MAX_DIGITS);
 			gather.setFinishOnKey(HASH);
@@ -85,11 +79,16 @@ public class PhoneBuzzController {
 	}
 	
 	@RequestMapping("/phonebuzz")
-	public ResponseEntity<?> phonebuzz(@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits){
+	public ResponseEntity<?> phonebuzz(
+			@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits,
+			HttpServletRequest req){
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		TwiMLResponse twiml = new TwiMLResponse();
 		HttpHeaders headers = new HttpHeaders();
 		try {
+			
+			validateRequest(req);
+			
 			if (digits != null) {
 				int top = Integer.parseInt(digits);
 				for (int i = 1; i <= top; i++){
@@ -118,10 +117,12 @@ public class PhoneBuzzController {
 		return hmacSha1Base64(AUTH_TOKEN, getReqURL(req));
 	}
 	
-	private boolean validateRequest(HttpServletRequest req) {
+	private void validateRequest(HttpServletRequest req) throws TwiMLException {
 		String hmacsha1base64 = getExpectedXTwiSig(req);
 		String xTwiSig = req.getHeader(X_TWI_SIG);
-		return hmacsha1base64.equals(xTwiSig);
+		if  (!hmacsha1base64.equals(xTwiSig)){
+			throw new TwiMLException(X_TWI_SIG + " mismatch");
+		}
 	}
 	
 	private String hmacSha1Base64(String key, String valueToDigest) {
