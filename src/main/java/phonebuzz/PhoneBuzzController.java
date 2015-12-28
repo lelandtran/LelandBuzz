@@ -40,9 +40,7 @@ public class PhoneBuzzController {
 	}
 	
 	@RequestMapping("/simple")
-	public ResponseEntity<?> simple(
-			@RequestParam(value=X_TWI_SIG, required=false) String xTwiSig,
-			HttpServletRequest req) {
+	public ResponseEntity<?> simple(HttpServletRequest req) {
 		
 		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
@@ -62,13 +60,8 @@ public class PhoneBuzzController {
 	    		
 		try {
 			/* Obstacle: Could not figure out how to nest a Say within a Gather using Java helper library */
-			if (xTwiSig!=null) {
-				if(!validateRequest(req)) {
-					throw new TwiMLException(X_TWI_SIG + " mismatch");
-				}
-			}
-			else {
-				throw new TwiMLException(X_TWI_SIG + " absent");
+			if(!validateRequest(req)) {
+				throw new TwiMLException(X_TWI_SIG + " mismatch");
 			}
 			
 			TwiMLResponse twiml = new TwiMLResponse();
@@ -127,7 +120,7 @@ public class PhoneBuzzController {
 	
 	private boolean validateRequest(HttpServletRequest req) {
 		String hmacsha1base64 = getExpectedXTwiSig(req);
-		String xTwiSig = req.getParameter(X_TWI_SIG);
+		String xTwiSig = req.getHeader(X_TWI_SIG);
 		return hmacsha1base64.equals(xTwiSig);
 	}
 	
