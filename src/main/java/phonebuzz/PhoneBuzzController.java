@@ -43,7 +43,7 @@ public class PhoneBuzzController {
 			gather.setNumDigits(MAX_DIGITS);
 			gather.setFinishOnKey(HASH);
 			gather.setAction(PB_URL);
-			gather.setAction(GET);
+			gather.setMethod(GET);
 			twiml.append(gather);
 			headers.add(HttpHeaders.CONTENT_TYPE, XML_TYPE);
 			resp = new ResponseEntity<String>(twiml.toXML(), headers, HttpStatus.OK);
