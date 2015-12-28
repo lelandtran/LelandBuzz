@@ -1,5 +1,10 @@
 package phonebuzz;
 
+import java.util.Base64;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,7 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.twilio.sdk.verbs.*;
+import com.twilio.sdk.verbs.Gather;
+import com.twilio.sdk.verbs.Play;
+import com.twilio.sdk.verbs.Say;
+import com.twilio.sdk.verbs.TwiMLException;
+import com.twilio.sdk.verbs.TwiMLResponse;
 
 @Controller 
 public class PhoneBuzzController {
@@ -19,6 +28,8 @@ public class PhoneBuzzController {
 	public static final String DIGITS_DEFAULT = "5";
 	public static final String XML_TYPE = "application/xml";
 	public static final int    MAX_DIGITS = 2;
+	public static final String X_TWI_SIG = "X-Twilio-Signature";
+	public static final String AUTH_TOKEN = "8054f0218fc92eaed7f4d9e22e3cea01";
 	public static final String PB_URL = "http://lelandbuzz.herokuapp.com/phonebuzz";
 	public static final String BEEP_MP3 = "http://soundbible.com/mp3/Censored_Beep-Mastercard-569981218.mp3";
 	
@@ -29,12 +40,37 @@ public class PhoneBuzzController {
 	}
 	
 	@RequestMapping("/simple")
-	public ResponseEntity<?> simple() {
+	public ResponseEntity<?> simple(
+			@RequestParam(value=X_TWI_SIG, required=false) String xTwiSig,
+			HttpServletRequest req) {
+		
+		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		HttpHeaders headers = new HttpHeaders();
 		
+		/*
+	    if (xTwiSig == null) {
+	    	String resbody = new String();
+	    	resbody = resbody + "Hashed: " + hmacSha1Base64(AUTH_TOKEN, getReqURL(req));
+	    	resbody = resbody + "AuthToken: " + AUTH_TOKEN + "\n";
+	    	resbody = resbody + "RequestedURL: " + getReqURL(req) + "\n";
+	    	resbody = resbody + HmacUtils.hmacSha1Hex(AUTH_TOKEN, getReqURL(req));
+	    			
+	    	return new ResponseEntity<String>(resbody, HttpStatus.BAD_REQUEST);
+	    }
+	    */
+	    		
 		try {
 			/* Obstacle: Could not figure out how to nest a Say within a Gather using Java helper library */
+			if (xTwiSig!=null) {
+				if(!validateRequest(req)) {
+					throw new TwiMLException(X_TWI_SIG + " mismatch");
+				}
+			}
+			else {
+				throw new TwiMLException(X_TWI_SIG + " absent");
+			}
+			
 			TwiMLResponse twiml = new TwiMLResponse();
 			twiml.append(new Say("Welcome to Leland's PhoneBuzz."));
 			twiml.append(new Say("After the beep, enter a number up to " + MAX_DIGITS + " digits followed by the pound key to hear FizzBuzz up to that number."));
@@ -51,7 +87,7 @@ public class PhoneBuzzController {
 		}
 		catch (TwiMLException e){
 			e.printStackTrace();
-			return new ResponseEntity<String>(HttpStatus.UNPROCESSABLE_ENTITY);
+			return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
 	
@@ -71,14 +107,36 @@ public class PhoneBuzzController {
 				resp = new ResponseEntity<String>(twiml.toXML(), headers, HttpStatus.OK);
 			}
 			else {
-				throw new NullPointerException();
+				throw new NullPointerException("Digits param not included");
 			}
 		}
 		catch (Exception e){
-			resp = new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
+			resp = new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 		return resp;
 	}
+	
+	private String getReqURL(HttpServletRequest req) {
+		String url = req.getRequestURL().toString()+ "?" + req.getQueryString();
+		return url;
+	}
+	
+	private String getExpectedXTwiSig(HttpServletRequest req) {
+		return hmacSha1Base64(AUTH_TOKEN, getReqURL(req));
+	}
+	
+	private boolean validateRequest(HttpServletRequest req) {
+		String hmacsha1base64 = getExpectedXTwiSig(req);
+		String xTwiSig = req.getParameter(X_TWI_SIG);
+		return hmacsha1base64.equals(xTwiSig);
+	}
+	
+	private String hmacSha1Base64(String key, String valueToDigest) {
+		byte[] hmacsha1 = HmacUtils.hmacSha1(key, valueToDigest);
+		String hmacsha1base64 = Base64.getEncoder().encodeToString(hmacsha1);
+		return hmacsha1base64;
+	}
+	
 	
 	private String intToFB(int i) {
 		String fb = EMPTY_STR;
