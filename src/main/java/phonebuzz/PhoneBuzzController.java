@@ -26,6 +26,12 @@ import com.twilio.sdk.verbs.Say;
 import com.twilio.sdk.verbs.TwiMLException;
 import com.twilio.sdk.verbs.TwiMLResponse;
 
+/**
+ * Controller class for a PhoneBuzz web application implemented with Spring MVC
+ * Completed as a coding challenge for LendUp
+ * @author LelandTran
+ *
+ */
 @Controller 
 public class PhoneBuzzController {
 	public static final String FIZZ = "fizz";
@@ -35,6 +41,7 @@ public class PhoneBuzzController {
 	public static final String STAT_ATTR = "status";
 	public static final String EMPTY_STR = "";
 	public static final String DIGITS_DEFAULT = "5";
+	public static final String DELAY_DEFAULT = "0";
 	public static final String TARGET_DEFAULT = "7606217851";
 	public static final String XML_TYPE = "application/xml";
 	public static final int    MAX_DIGITS = 2;
@@ -46,12 +53,64 @@ public class PhoneBuzzController {
 	public static final String PB_URL = "http://lelandbuzz.herokuapp.com/phonebuzz";
 	public static final String BEEP_MP3 = "http://soundbible.com/mp3/Censored_Beep-Mastercard-569981218.mp3";
 	
+	/**
+	 * The home page for the PhoneBuzz application
+	 * Asks the user for a number to send a PhoneBuzz call to and a delay 
+	 * @return the view name "index" for the home page
+	 */
 	@RequestMapping("/")
 	public String home() {
 		
 		return "index";
 	}
 	
+	/**
+	 * The page which sends a POST request to Twilio to make a PhoneBuzz call to the number
+	 * included as the target parameter in the request to this page.
+	 * @param target the number that PhoneBuzz will call and prompt to play
+	 * @param model  the model that will be sent to the view
+	 * @return       the view for "outbound" page
+	 */
+	@RequestMapping("/outbound")
+	public String outbound(
+			@RequestParam(value="target", required=false, defaultValue=TARGET_DEFAULT) String target,
+			@RequestParam(value="delay", required=false, defaultValue=DELAY_DEFAULT) String delay,
+			Model model){
+		StringBuffer statBuf = new StringBuffer();
+		// Use REST API to make call
+		try {
+			TwilioRestClient client = new TwilioRestClient(ACCOUNT_SID, AUTH_TOKEN);
+			Account mainAccount = client.getAccount();
+			CallFactory callFactory = mainAccount.getCallFactory();
+			Map<String, String> callParams = new HashMap<String, String>();
+			callParams.put("To", target);
+			callParams.put("From", TWILIO_NUM);
+			callParams.put("Url", SIMPLE_URL);
+			callParams.put("Method", GET);
+			delayInSeconds(Integer.parseInt(delay));
+			Call call = callFactory.create(callParams);
+			statBuf = statBuf.append("A PhoneBuzz call was made to ").append(target);
+			statBuf = statBuf.append("\n");
+			statBuf = statBuf.append("Call SID: ").append(call.getSid());
+		}
+		catch (NumberFormatException e) {
+			statBuf.append("The delay specified is not a number");
+		}
+		catch (TwilioRestException e) {
+			statBuf.append("The PhoneBuzz call failed due to: \n");
+			statBuf.append(e.getMessage());
+		}
+		model.addAttribute(STAT_ATTR, statBuf.toString());
+		return "outbound";
+	}
+	
+	/**
+	 * The TwiML document which prompts the other end of the call to enter a number
+	 * to begin PhoneBuzz. The TwiML gathers the number and sends it to the 
+	 * phonebuzz() method mapped to /phonebuzz
+	 * @param req binding to the HttpRequest
+	 * @return ResponseEntity with TwiML prompt for PhoneBuzz 
+	 */
 	@RequestMapping("/simple")
 	public ResponseEntity<?> simple(HttpServletRequest req) {
 		
@@ -91,6 +150,13 @@ public class PhoneBuzzController {
 		}
 	}
 	
+	/**
+	 * The TwiML that recites FizzBuzz up to the number parsed from the String
+	 * included as the Digits parameter in the request to this page
+	 * @param digits the Digits parameter included in the request to this page
+	 * @param req    binding to the HttpRequest to this page
+	 * @return       ResponseEntity with TwiML for reciting FizzBuzz
+	 */
 	@RequestMapping("/phonebuzz")
 	public ResponseEntity<?> phonebuzz(
 			@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits,
@@ -115,40 +181,21 @@ public class PhoneBuzzController {
 				throw new NullPointerException("Digits param not included");
 			}
 		}
+		/*
+		 * TODO: Include more informative exceptions i.e. TwiMLException, exception from
+		 * attempting to parse integers
+		 */
 		catch (Exception e){
 			resp = new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 		return resp;
 	}
 	
-	@RequestMapping("/outbound")
-	public String outbound(
-			@RequestParam(value="target", required=false, defaultValue=TARGET_DEFAULT) String target,
-			Model model){
-		StringBuffer statBuf = new StringBuffer();
-		// Use REST API to make call
-		try {
-			TwilioRestClient client = new TwilioRestClient(ACCOUNT_SID, AUTH_TOKEN);
-			Account mainAccount = client.getAccount();
-			CallFactory callFactory = mainAccount.getCallFactory();
-			Map<String, String> callParams = new HashMap<String, String>();
-			callParams.put("To", target);
-			callParams.put("From", TWILIO_NUM);
-			callParams.put("Url", SIMPLE_URL);
-			callParams.put("Method", GET);
-			Call call = callFactory.create(callParams);
-			statBuf = statBuf.append("A PhoneBuzz call was made to ").append(target);
-			statBuf = statBuf.append("\n");
-			statBuf = statBuf.append("Call SID: ").append(call.getSid());
-		}
-		catch (TwilioRestException e) {
-			statBuf.append("The PhoneBuzz call failed due to: \n");
-			statBuf.append(e.getMessage());
-		}
-		model.addAttribute(STAT_ATTR, statBuf.toString());
-		return "outbound";
-	}
-	
+	/**
+	 * Retrieve the URL that the HttpRequest was sent to
+	 * @param req the HttpRequest
+	 * @return    the URL the HttpRequest was sent to
+	 */
 	private String getReqURL(HttpServletRequest req) {
 		StringBuffer urlBuf = req.getRequestURL();
 		String query = req.getQueryString();
@@ -158,14 +205,23 @@ public class PhoneBuzzController {
 		return urlBuf.toString();
 	}
 	
+	/**
+	 * Hashes the request's URL to match against the X-Twilio-Signature header of the 
+	 * Twilio page request
+	 * @param req
+	 * @return the hashed URL
+	 */
 	private String getExpectedXTwiSig(HttpServletRequest req) {
 		return hmacSha1Base64(AUTH_TOKEN, getReqURL(req));
 	}
 	
-	/*
-	 * TODO: Get this to work with POST request
+	/**
+	 * Validate that the page request is indeed coming from Twilio
+	 * @param req
+	 * @throws TwiMLException if the page request is not coming from Twilio
 	 */
 	private void validateRequest(HttpServletRequest req) throws TwiMLException {
+		// TODO: Get this to work with POST request
 		String hmacsha1base64 = getExpectedXTwiSig(req);
 		String xTwiSig = req.getHeader(X_TWI_SIG);
 		if  (!hmacsha1base64.equals(xTwiSig)){
@@ -173,13 +229,24 @@ public class PhoneBuzzController {
 		}
 	}
 	
+	/**
+	 * Hash the valueToDigest with the key in hMAC-SHA1 encryption algorithm and encode
+	 * the String in Base64
+	 * @param key the key used for hashing
+	 * @param valueToDigest the value that will be hashed
+	 * @return the hashed value in Base64 encoding
+	 */
 	private String hmacSha1Base64(String key, String valueToDigest) {
 		byte[] hmacsha1 = HmacUtils.hmacSha1(key, valueToDigest);
 		String hmacsha1base64 = Base64.getEncoder().encodeToString(hmacsha1);
 		return hmacsha1base64;
 	}
 	
-	
+	/**
+	 * Returns the String that will be recited by FizzBuzz for int i
+	 * @param i the number
+	 * @return the String which is said as i in FizzBuzz
+	 */
 	private String intToFB(int i) {
 		String fb = EMPTY_STR;
 		if (i % 3 != 0 && i % 5 != 0) {
@@ -194,6 +261,20 @@ public class PhoneBuzzController {
 			}
 		}
 		return fb;
+	}
+	
+	/**
+	 * Delay the execution of this thread by a specified parameter length of time in milliseconds
+	 * @param delay
+	 */
+	private void delayInSeconds(int delay) {
+		try {
+			delay = delay * 1000;
+			Thread.sleep(delay);
+		}
+		catch (InterruptedException e) {
+			System.out.println("Thread awakened prematurely");
+		}
 	}
 	
 	

@@ -16,5 +16,43 @@ Phases
 	2. Dialing PhoneBuzz
 		a. Home page displays a form with a textbox and a submit button
 		b. sanitize the textbox input
+			i. luckily the api handles this for me with twiliorestexception, presumably based off of the input to the "to" parameter
 		c. send request to Spring controller which uses twilio rest api
+
+	3. Delayed PhoneBuzz (different approaches)
+		Approach A:
+			a. send the request from the home page to an intermediate TwiML page that will <pause> for however long the client details.
+			b. after the pause, <redirect> the the twiml to the /outbound page
+			Concerns: 
+				-what's the best way to pass the callParams through the intermediate page whether it's html or TwiML?
+		Approach B: 
+			a. send the request to an intermediate html view with js that counts down to 0 
+			b. use js methods to redirect to the /outbound page
+			Concerns: 
+				-what's the best way to pass the callParams through the intermediate page whether it's html or TwiML?
+					+use a hidden form?
+		Approach C: (first attempted, but ran into problems)
+			a. take the delay parameter in the /outbound method and countdown within the method after put-ing all the callParams, then allow the method to proceed to the callFactory.create(callParams) line
+			Problems: 
+				-this approach freezes the browser on the home page but still sends the request.
+				-more requests cannot be made from the original page
+		Approach D: (an add-on to Approach C)
+			a. use helper libraries to create the call as usual
+			b. on the home page html, when the submit button is clicked, make it unclickable for however long the delay is so the controller has time to delay execution and send the request
+				i. say the request has been submitted and the page will re-render once the call is sent
+			c. have the controller return the home page view
+			Concerns:
+				-the view and controller are now tightly coupled
+		Ideal circumstance:
+			a. user send request and a new page is rendered, perhaps the same page
+			b. after the specified delay the call is made
+			c. when the new page is rendered and when the call is made are not related
+			ideas:
+				-perhaps look into using ajax?
+		Approach E:
+			a. include a jQuery controller in the home page view which uses ajax to send a request to /outbound with the delay and target as parameters
+			b. change outbound()'s return type to be a ResponseEntity with any exceptions or meaningful output
+
+		Testing:
+			Over around 4 control trials, the call takes around 5 seconds to be received from whence the request is sent 
 
