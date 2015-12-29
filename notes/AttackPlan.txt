@@ -3,19 +3,18 @@ Plan of Attack:
 Create the app using Spring Boot to make an executable JAR.
 For redundancy, try to zip up the relevant files to run as a web application on a Tomcat server.
 
-	1. Use Spring MVC to create a webpage (view unimportant for Phase 1)
-		a. Webpage will just have a request mapping and a response body
-		b. Response body will be
+Phases
+	1. Simple PhoneBuzz
+		a. Use Spring MVC to create a webpage (view unimportant for Phase 1)
+		b. Webpage will just have a request mapping and a response body
+		c. Response body will be
 			i. Say: Ask for a number
 			ii. Gather: Save the input number
 			iii. Say: Depending on the previous Gather, recite FizzBuzz
 				 Try to do this programmatically with mods  
-	2. 
 
-
-
-Timeline:
-	12/26/15, 3:26pm - Email received
-	12/26/15, 5:14pm - Email opened and challenge brushed over since I was a little preoccupied
-	12/26/15, 9:00pm - Started light research on TwiML documentation and usage
+	2. Dialing PhoneBuzz
+		a. Home page displays a form with a textbox and a submit button
+		b. sanitize the textbox input
+		c. send request to Spring controller which uses twilio rest api
 
