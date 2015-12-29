@@ -51,7 +51,7 @@ Phases
 				-perhaps look into using ajax?
 		Approach E:
 			a. include a jQuery controller in the home page view which uses ajax to send a request to /outbound with the delay and target as parameters
-			b. change outbound()'s return type to be a ResponseEntity with any exceptions or meaningful output
+			b. change outbound()'s return type to be a ResponseEntity with any exceptions or meaningful output e.g. status
 
 		Testing:
 			Over around 4 control trials, the call takes around 5 seconds to be received from whence the request is sent 

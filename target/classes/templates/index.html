@@ -2,18 +2,62 @@
 
 <head>
 	<title>LelandBuzz</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 </head>
 
 <body>
 	<p>Welcome to Leland Tran's PhoneBuzz application</p>
 	<p>This is a LendUp Coding Challenge Submission</p>
 	<p>Phase 2: </p>
-	<form action="outbound">
-		Number: <input type="text" name="target" />
+	<form id="call-form">
+		Number: <input type="text" name="target" id="target"/>
 		<br />
-		Delay (in seconds): <input type="text" name="delay" />
+		Delay (in seconds): <input type="text" name="delay" id="delay"/>
 		<br />
-		<input type="submit" value="Submit" />
+		<button type="submit">Submit</button>
 	</form>
+	<p id="display"></p>
 	 
 </body>
+
+<script>
+	$(document).ready(function() {
+		$("#call-form").submit(function(e) {
+			e.preventDefault();
+			display("Request submitted");
+			sendCall();
+		})
+	})
+
+	function sendCall() {
+		var params = {}
+		params["target"] = $("#target").val();
+		params["delay"] = $("#delay").val();
+		console.log("Params: " + JSON.stringify(params));
+		$.ajax({
+			type: "GET",
+			contentType: "application/json",
+			url : "outbound",
+			data : jQuery.param(params),
+			timeout: 100000,
+			success: function(data) {
+				console.log("SUCCESS: ", data);
+				var json = JSON.parse(data);
+				console.log("json: " + json);
+				display(json.status);
+			},
+			error: function(e) {
+				console.log("ERROR: ", e);
+
+			},
+			done: function(e){
+				console.log("DONE");
+			}
+		});
+	}
+
+	function display(data){
+		$("#display").text(data);
+	}
+
+</script>

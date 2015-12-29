@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.json.Json;
 
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.http.HttpHeaders;
@@ -72,12 +73,14 @@ public class PhoneBuzzController {
 	 * @return       the view for "outbound" page
 	 */
 	@RequestMapping("/outbound")
-	public String outbound(
+	public ResponseEntity<?> outbound(
 			@RequestParam(value="target", required=false, defaultValue=TARGET_DEFAULT) String target,
 			@RequestParam(value="delay", required=false, defaultValue=DELAY_DEFAULT) String delay,
 			Model model){
+		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		StringBuffer statBuf = new StringBuffer();
 		// Use REST API to make call
+		// Does not need validation because this is not a TwiML document
 		try {
 			TwilioRestClient client = new TwilioRestClient(ACCOUNT_SID, AUTH_TOKEN);
 			Account mainAccount = client.getAccount();
@@ -90,18 +93,20 @@ public class PhoneBuzzController {
 			delayInSeconds(Integer.parseInt(delay));
 			Call call = callFactory.create(callParams);
 			statBuf = statBuf.append("A PhoneBuzz call was made to ").append(target);
-			statBuf = statBuf.append("\n");
+			statBuf = statBuf.append("  ");
 			statBuf = statBuf.append("Call SID: ").append(call.getSid());
 		}
 		catch (NumberFormatException e) {
 			statBuf.append("The delay specified is not a number");
 		}
 		catch (TwilioRestException e) {
-			statBuf.append("The PhoneBuzz call failed due to: \n");
+			statBuf.append("The PhoneBuzz call failed due to: ");
 			statBuf.append(e.getMessage());
 		}
 		model.addAttribute(STAT_ATTR, statBuf.toString());
-		return "outbound";
+		//TODO: Do this programmatically with a JSON library
+		resp = new ResponseEntity<String>("{\"status\": \"" + statBuf.toString() + "\"}", HttpStatus.OK);
+		return resp;
 	}
 	
 	/**
