@@ -1,9 +1,6 @@
 package phonebuzz;
 
 import java.io.ByteArrayOutputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Date;
@@ -20,9 +17,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -104,6 +98,8 @@ public class PhoneBuzzController {
 			callParams.put("To", target);
 			callParams.put("From", TWILIO_NUM);
 			// NOTE: Here we append a parameter to pass the delay input to /simple
+			// definitely a hack but endorsed by a Twilio evangelist here
+			// http://stackoverflow.com/questions/19121392/is-it-possible-to-add-additional-variables-to-the-action-attribute-in-the-gather
 			callParams.put("Url", SIMPLE_URL+"?delay="+delay);
 			callParams.put("Method", GET);
 			//callParams.put("delay", delay);
@@ -172,7 +168,7 @@ public class PhoneBuzzController {
 			Gather gather = new Gather();
 			gather.setNumDigits(MAX_DIGITS);
 			gather.setFinishOnKey(HASH);
-			// NOTE: Here we append a parameter to pass the delay input to /simple
+			// NOTE: Here we append a parameter to pass the delay input to /phonebuzz
 			gather.setAction(PB_URL+"?delay="+delay);
 			gather.setMethod(GET);
 			twiml.append(gather);
