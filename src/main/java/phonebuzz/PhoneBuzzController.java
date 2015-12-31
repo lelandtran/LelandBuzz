@@ -143,7 +143,7 @@ public class PhoneBuzzController {
 	 */
 	@RequestMapping("/simple")
 	public ResponseEntity<?> simple(HttpServletRequest req,
-			@RequestParam(value="delay", required=false, defaultValue="66") String delay) {
+			@RequestParam(value="delay", required=false, defaultValue="-2") String delay) {
 		
 		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
@@ -197,7 +197,7 @@ public class PhoneBuzzController {
 	public ResponseEntity<?> phonebuzz(
 			@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits,
 			@RequestParam(value="To", required=true) String target,
-			@RequestParam(value="delay", required=false, defaultValue="55") String delay,
+			@RequestParam(value="delay", required=false, defaultValue="-1") String delay,
 			HttpServletRequest req){
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		TwiMLResponse twiml = new TwiMLResponse();
