@@ -40,12 +40,38 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.10</version>
 		</dependency>
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.2.2</version>
+		</dependency>
+		
 		
 		<!-- Json -->
         <dependency>
     		<groupId>javax.json</groupId>
     		<artifactId>javax.json-api</artifactId>
     		<version>1.0</version>
+		</dependency>
+		<dependency> <!-- Used for jdbcTemplate.update to specify key new String[] {"id"} -->
+  			<groupId>org.glassfish</groupId>
+  			<artifactId>javax.json</artifactId>
+  			<version>1.0.4</version>
+		</dependency>
+		
+		<!-- JDBC -->
+		<dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+        <dependency>
+    		<groupId>org.springframework.boot</groupId>
+        	<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		<dependency>
+  			<groupId>org.postgresql</groupId>
+  			<artifactId>postgresql</artifactId>
+  			<version>9.4-1201-jdbc4</version>
 		</dependency>
   
   </dependencies>

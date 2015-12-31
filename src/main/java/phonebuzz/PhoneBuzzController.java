@@ -1,16 +1,28 @@
 package phonebuzz;
 
+import java.io.ByteArrayOutputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.json.Json;
+import javax.json.stream.JsonGenerator;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.codec.digest.HmacUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +66,9 @@ public class PhoneBuzzController {
 	public static final String PB_URL = "http://lelandbuzz.herokuapp.com/phonebuzz";
 	public static final String BEEP_MP3 = "http://soundbible.com/mp3/Censored_Beep-Mastercard-569981218.mp3";
 	
+	@Autowired
+	JdbcTemplate jdbcTemplate;
+	
 	/**
 	 * The home page for the PhoneBuzz application
 	 * Asks the user for a number to send a PhoneBuzz call to and a delay 
@@ -88,13 +103,16 @@ public class PhoneBuzzController {
 			Map<String, String> callParams = new HashMap<String, String>();
 			callParams.put("To", target);
 			callParams.put("From", TWILIO_NUM);
-			callParams.put("Url", SIMPLE_URL);
+			// NOTE: Here we append a parameter to pass the delay input to /simple
+			callParams.put("Url", SIMPLE_URL+"?delay="+delay);
 			callParams.put("Method", GET);
+			//callParams.put("delay", delay);
 			delayInSeconds(Integer.parseInt(delay));
 			Call call = callFactory.create(callParams);
 			statBuf = statBuf.append("A PhoneBuzz call was made to ").append(target);
 			statBuf = statBuf.append("  ");
 			statBuf = statBuf.append("Call SID: ").append(call.getSid());
+			
 		}
 		catch (NumberFormatException e) {
 			statBuf.append("The delay specified is not a number");
@@ -103,8 +121,12 @@ public class PhoneBuzzController {
 			statBuf.append("The PhoneBuzz call failed due to: ");
 			statBuf.append(e.getMessage());
 		}
+		
 		model.addAttribute(STAT_ATTR, statBuf.toString());
+		
 		//TODO: Do this programmatically with a JSON library
+		JsonGenerator generator = Json.createGenerator(new ByteArrayOutputStream());
+		generator.toString(); // TODO: remove - written just to suppress an eclipse warning
 		resp = new ResponseEntity<String>("{\"status\": \"" + statBuf.toString() + "\"}", HttpStatus.OK);
 		return resp;
 	}
@@ -113,11 +135,15 @@ public class PhoneBuzzController {
 	 * The TwiML document which prompts the other end of the call to enter a number
 	 * to begin PhoneBuzz. The TwiML gathers the number and sends it to the 
 	 * phonebuzz() method mapped to /phonebuzz
+	 * NOTE for Phase 1: For some reason, the first phone call I make to the phone 
+	 * number after a few hours triggers an application error because of a network 
+	 * failure. However, calling the number again results in a successful connection.
 	 * @param req binding to the HttpRequest
 	 * @return ResponseEntity with TwiML prompt for PhoneBuzz 
 	 */
 	@RequestMapping("/simple")
-	public ResponseEntity<?> simple(HttpServletRequest req) {
+	public ResponseEntity<?> simple(HttpServletRequest req,
+			@RequestParam(value="delay", required=false, defaultValue="66") String delay) {
 		
 		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
@@ -138,11 +164,16 @@ public class PhoneBuzzController {
 			twiml.append(new Say("Welcome to Leland's PhoneBuzz."));
 			twiml.append(new Say("After the beep, enter a number up to " + MAX_DIGITS + " digits followed by the pound key to hear FizzBuzz up to that number."));
 			twiml.append(new Play(BEEP_MP3));
-			/* NOTE: Could not figure out how to nest a Say within a Gather using Java helper library */
+			/* NOTE: Could not figure out how to nest a Say within a 
+			 * Gather using Java helper library.
+			 * Another approach would be to hardcode the TwiML myself 
+			 * to allow for a nested Say in the Gather so the user 
+			 * could input digits as soon as he/she wanted to. */
 			Gather gather = new Gather();
 			gather.setNumDigits(MAX_DIGITS);
 			gather.setFinishOnKey(HASH);
-			gather.setAction(PB_URL);
+			// NOTE: Here we append a parameter to pass the delay input to /simple
+			gather.setAction(PB_URL+"?delay="+delay);
 			gather.setMethod(GET);
 			twiml.append(gather);
 			headers.add(HttpHeaders.CONTENT_TYPE, XML_TYPE);
@@ -165,6 +196,8 @@ public class PhoneBuzzController {
 	@RequestMapping("/phonebuzz")
 	public ResponseEntity<?> phonebuzz(
 			@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits,
+			@RequestParam(value="To", required=true) String target,
+			@RequestParam(value="delay", required=false, defaultValue="55") String delay,
 			HttpServletRequest req){
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		TwiMLResponse twiml = new TwiMLResponse();
@@ -173,6 +206,35 @@ public class PhoneBuzzController {
 			
 			validateRequest(req);
 			
+			// Retrieve the auto-generated key that was created from row insertion
+
+			Timestamp time = new Timestamp((new Date()).getTime());
+			
+			String sql = "INSERT INTO replays(time, phoneNum, delay, digits) "+
+					"VALUES(?, ?, ?, ?)";
+			jdbcTemplate.update(sql, time, target, delay, digits);
+			
+			System.err.println("added row");
+			/*
+			KeyHolder keyHolder = new GeneratedKeyHolder();
+			jdbcTemplate.update(
+				    new PreparedStatementCreator() {
+				    	@Override
+				        public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+				            PreparedStatement ps = connection.prepareStatement(sql, new String[] {"id"});
+				            ps.setTimestamp(1, time);
+				            ps.setString(2, target);
+				            ps.setInt(3, Integer.parseInt(delay));
+				            
+				            return ps;
+				        }
+				    },
+				    keyHolder);
+			int key = keyHolder.getKey().intValue();
+			statBuf.append("  ");
+			statBuf.append("Call inserted into database. Key: " + key);
+			*/
+						
 			if (digits != null) {
 				int top = Integer.parseInt(digits);
 				for (int i = 1; i <= top; i++){
@@ -190,7 +252,7 @@ public class PhoneBuzzController {
 		 * TODO: Include more informative exceptions i.e. TwiMLException, exception from
 		 * attempting to parse integers
 		 */
-		catch (Exception e){
+		catch (TwiMLException | NullPointerException e){
 			resp = new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 		return resp;

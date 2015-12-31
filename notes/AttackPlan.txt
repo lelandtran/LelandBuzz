@@ -1,5 +1,8 @@
 Plan of Attack:
 
+Note:
+For some reason, the phone call to the 
+
 Create the app using Spring Boot to make an executable JAR.
 For redundancy, try to zip up the relevant files to run as a web application on a Tomcat server.
 
@@ -51,8 +54,16 @@ Phases
 				-perhaps look into using ajax?
 		Approach E:
 			a. include a jQuery controller in the home page view which uses ajax to send a request to /outbound with the delay and target as parameters
-			b. change outbound()'s return type to be a ResponseEntity with any exceptions or meaningful output e.g. status
+			b. change outbound()'s return type to be a ResponseEntity with any exceptions or meaningful output e.g. status 
 
-		Testing:
-			Over around 4 control trials, the call takes around 5 seconds to be received from whence the request is sent 
+	4. Tracking PhoneBuzz
+		a. Save all calls to a database
+		b. Query the database on the home page for all phone calls
+		c. for each row returned, display the time, target phone number, delay, and digits used for fizzbuzz
+		d. include a replay button
+			i. send the request to /phonebuzz
+				-cannot send the request to /simple because that would prompt the target for a number
+				-idea 1: create a conditional statement that sends the request directly to /phonebuzz with the Digits parameter set if the request was made by a "replay"
+		Concern: where to put the replays insert table
+
 
