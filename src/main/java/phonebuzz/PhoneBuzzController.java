@@ -212,7 +212,7 @@ public class PhoneBuzzController {
 			
 			String sql = "INSERT INTO replays(time, phoneNum, delay, digits) "+
 					"VALUES(?, ?, ?, ?)";
-			jdbcTemplate.update(sql, time, target, delay, digits);
+			jdbcTemplate.update(sql, time, target, Integer.parseInt(delay), digits);
 			
 			System.err.println("added row");
 			/*
