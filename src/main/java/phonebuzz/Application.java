@@ -24,11 +24,12 @@ public class Application implements CommandLineRunner {
     public void run(String... strings) throws Exception {
 
         
-        //Below code is used to create the replays table. Can be used to reset the table.
-        jdbcTemplate.execute("DROP TABLE IF EXISTS replays");
+        //Below code is used to create the phonecalls table. Can be used to reset the table.
+        /*
+        jdbcTemplate.execute("DROP TABLE IF EXISTS phonecalls");
         jdbcTemplate.execute("CREATE TABLE phonecalls(" +
         		"id SERIAL PRIMARY KEY, time TIMESTAMPTZ, phonenum TEXT, delay INT, digits INT)");
-        
+        */
         log.info("Created phonecalls table");
 		
        

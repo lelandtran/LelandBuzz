@@ -24,11 +24,11 @@
 			<th>Delay (in seconds)</th>
 			<th>User Input</th>
 		</tr>
-		<tr th:each="rep : ${replays}">
-			<td th:text="${rep.time}"></td>
-			<td th:text="${rep.phoneNum}"></td>
-			<td th:text="${rep.delay}"></td>
-			<td th:text="${rep.digits}"></td>
+		<tr th:each="pc : ${phonecalls}">
+			<td th:text="${pc.time}"></td>
+			<td th:text="${pc.phoneNum}"></td>
+			<td th:text="${pc.delay}"></td>
+			<td th:text="${pc.digits}"></td>
 		</tr>
 	</table>
 	 
