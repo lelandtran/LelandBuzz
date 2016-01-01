@@ -2,36 +2,68 @@
 <html xmlns:th="http://www.thymeleaf.org" />
 <head>
 	<title>LelandBuzz</title>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"></link>
+
+	<!-- jQuery library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+	<!-- Latest compiled JavaScript -->
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </head>
 
 <body>
-	<p>Welcome to Leland Tran's PhoneBuzz application</p>
-	<p>This is a LendUp Coding Challenge Submission</p>
-	<p>Phase 2: </p>
-	<form id="call-form">
-		Number: <input type="text" name="target" id="target"/>
-		<br />
-		Delay (in seconds): <input type="text" name="delay" id="delay"/>
-		<br />
-		<button type="submit">Submit</button>
-	</form>
-	<p id="display"></p>
-	<table>
-		<tr>
-			<th>Time</th>
-			<th>Phone Number</th>
-			<th>Delay (in seconds)</th>
-			<th>User Input</th>
-		</tr>
-		<tr th:each="rep : ${replays}">
-			<td th:text="${rep.time}"></td>
-			<td th:text="${rep.phoneNum}"></td>
-			<td th:text="${rep.delay}"></td>
-			<td th:text="${rep.digits}"></td>
-		</tr>
-	</table>
-	 
+	<div class="container col-sm-6 col-sm-offset-3">
+		
+		<h1>Welcome to Leland Tran's PhoneBuzz</h1>
+		<h3>This is a LendUp Coding Challenge Submission</h3>
+		<p>Below you can enter a phone number that you would like to send PhoneBuzz to.</p>
+		
+	</div>
+	<div class="container col-sm-6 col-sm-offset-3">
+		<form id="call-form" class="form-horizontal" role="form">
+			<div class="form-group">
+				<label class="control-label col-sm-3" for="number">Phone Number:</label>
+				<div class="col-sm-5">
+					<input type="text" class="form-control" id="target" placeholder="Enter phone number"/>
+				</div>
+			</div>	
+			<div class="form-group">
+				<label class="control-label col-sm-3" for="delay">Delay (in sec):</label>
+				<div class="col-sm-5">
+					<input type="text" class="form-control" id="delay" placeholder="Enter delay (in seconds)"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-offset-3 col-sm-5">
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</div>
+			</div>
+		</form>	
+	</div>
+	<div class="container col-sm-offset-3 col-sm-5">
+		<p>Status:</p><p id="display">Enter a phone number and delay.</p>
+	</div>
+	<div class="container col-sm-6 col-sm-offset-3" style="height:200px; overflow:auto;">
+		<table class = "table table-striped">
+			<thead>
+				<tr>
+					<th>Time</th>
+					<th>Phone Number</th>
+					<th>Delay (in seconds)</th>
+					<th>User Input</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="pc : ${phonecalls}">
+					<td th:text="${pc.time}"></td>
+					<td th:text="${pc.phoneNum}"></td>
+					<td th:text="${pc.delay}"></td>
+					<td th:text="${pc.digits}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </body>
 
 <script>

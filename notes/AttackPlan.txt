@@ -64,6 +64,7 @@ Phases
 			i. send the request to /phonebuzz
 				-cannot send the request to /simple because that would prompt the target for a number
 				-idea 1: create a conditional statement that sends the request directly to /phonebuzz with the Digits parameter set if the request was made by a "replay"
+		NOTE: This will also save calls made to the number without the web application.
 		Concern: where to put the replays insert table?
 			column: time -- scope: home view, /outbound, /simple, /phonebuzz
 			column: phoneNum -- scope: home view, /outbound

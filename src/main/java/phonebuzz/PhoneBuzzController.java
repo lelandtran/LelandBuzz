@@ -1,6 +1,5 @@
 package phonebuzz;
 
-import java.io.ByteArrayOutputStream;
 import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Date;
@@ -8,8 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.codec.digest.HmacUtils;
@@ -73,8 +70,7 @@ public class PhoneBuzzController {
 	 */
 	@RequestMapping("/")
 	public ModelAndView home() {
-		//TODO: Create a model and populate it with the jdbc query result set
-		String sql = "SELECT id, time, phonenum, delay, digits FROM phonecalls";
+		String sql = "SELECT id, time, phonenum, delay, digits FROM phonecalls ORDER BY time DESC";
 		List<PhoneCall> phonecalls  = jdbcTemplate.query(sql,
 				new BeanPropertyRowMapper<PhoneCall>(PhoneCall.class));
 		ModelAndView mav = new ModelAndView("index");
@@ -86,6 +82,7 @@ public class PhoneBuzzController {
 	 * The page which sends a POST request to Twilio to make a PhoneBuzz call to the number
 	 * included as the target parameter in the request to this page.
 	 * @param target the number that PhoneBuzz will call and prompt to play
+	 * @param delay  the amount of delay before the call is made
 	 * @param model  the model that will be sent to the view
 	 * @return       the view for "outbound" page
 	 */
@@ -129,8 +126,6 @@ public class PhoneBuzzController {
 		model.addAttribute(STAT_ATTR, statBuf.toString());
 		
 		//TODO: Do this programmatically with a JSON library
-		JsonGenerator generator = Json.createGenerator(new ByteArrayOutputStream());
-		generator.toString(); // TODO: remove - written just to suppress an eclipse warning
 		resp = new ResponseEntity<String>("{\"status\": \"" + statBuf.toString() + "\"}", HttpStatus.OK);
 		return resp;
 	}
@@ -143,6 +138,7 @@ public class PhoneBuzzController {
 	 * number after a few hours triggers an application error because of a network 
 	 * failure. However, calling the number again results in a successful connection.
 	 * @param req binding to the HttpRequest
+	 * @param delay the amount of delay before the call is made
 	 * @return ResponseEntity with TwiML prompt for PhoneBuzz 
 	 */
 	@RequestMapping("/simple")
@@ -194,6 +190,8 @@ public class PhoneBuzzController {
 	 * The TwiML that recites FizzBuzz up to the number parsed from the String
 	 * included as the Digits parameter in the request to this page
 	 * @param digits the Digits parameter included in the request to this page
+	 * @param target the phone number the call is made to
+	 * @param delay  the amount of delay before the call is made
 	 * @param req    binding to the HttpRequest to this page
 	 * @return       ResponseEntity with TwiML for reciting FizzBuzz
 	 */
@@ -214,6 +212,9 @@ public class PhoneBuzzController {
 
 			Timestamp time = new Timestamp((new Date()).getTime());
 			
+			/* NOTE: Putting the insert statement here will also log calls made to
+			 * the Twilio number.
+			 */
 			String sql = "INSERT INTO phonecalls(time, phoneNum, delay, digits) "+
 					"VALUES(?, ?, ?, ?)";
 			jdbcTemplate.update(sql, time, target, Integer.parseInt(delay), Integer.parseInt(digits));
@@ -252,10 +253,6 @@ public class PhoneBuzzController {
 				throw new NullPointerException("Digits param not included");
 			}
 		}
-		/*
-		 * TODO: Include more informative exceptions i.e. TwiMLException, exception from
-		 * attempting to parse integers
-		 */
 		catch (TwiMLException | NullPointerException e){
 			resp = new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
@@ -292,7 +289,6 @@ public class PhoneBuzzController {
 	 * @throws TwiMLException if the page request is not coming from Twilio
 	 */
 	private void validateRequest(HttpServletRequest req) throws TwiMLException {
-		// TODO: Get this to work with POST request
 		String hmacsha1base64 = getExpectedXTwiSig(req);
 		String xTwiSig = req.getHeader(X_TWI_SIG);
 		if  (!hmacsha1base64.equals(xTwiSig)){

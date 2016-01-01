@@ -29,9 +29,9 @@ public class Application implements CommandLineRunner {
         jdbcTemplate.execute("DROP TABLE IF EXISTS phonecalls");
         jdbcTemplate.execute("CREATE TABLE phonecalls(" +
         		"id SERIAL PRIMARY KEY, time TIMESTAMPTZ, phonenum TEXT, delay INT, digits INT)");
-        */
+        
         log.info("Created phonecalls table");
-		
+		*/
        
     }
 }
