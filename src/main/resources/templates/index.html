@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-
+<html xmlns:th="http://www.thymeleaf.org" />
 <head>
 	<title>LelandBuzz</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
@@ -17,6 +17,20 @@
 		<button type="submit">Submit</button>
 	</form>
 	<p id="display"></p>
+	<table>
+		<tr>
+			<th>Time</th>
+			<th>Phone Number</th>
+			<th>Delay (in seconds)</th>
+			<th>User Input</th>
+		</tr>
+		<tr th:each="rep : ${replays}">
+			<td th:text="${rep.time}"></td>
+			<td th:text="${rep.phoneNum}"></td>
+			<td th:text="${rep.delay}"></td>
+			<td th:text="${rep.digits}"></td>
+		</tr>
+	</table>
 	 
 </body>
 

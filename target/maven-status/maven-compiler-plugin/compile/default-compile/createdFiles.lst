@@ -1,5 +1,5 @@
 phonebuzz\PhoneBuzzController.class
-phonebuzz\Replay.class
 phonebuzz\Customer.class
+phonebuzz\PhoneCall.class
 phonebuzz\DatabaseConfig.class
 phonebuzz\Application.class

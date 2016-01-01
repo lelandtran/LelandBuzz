@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.json.Json;
@@ -16,11 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.twilio.sdk.TwilioRestClient;
 import com.twilio.sdk.TwilioRestException;
@@ -69,9 +72,14 @@ public class PhoneBuzzController {
 	 * @return the view name "index" for the home page
 	 */
 	@RequestMapping("/")
-	public String home() {
-		
-		return "index";
+	public ModelAndView home() {
+		//TODO: Create a model and populate it with the jdbc query result set
+		String sql = "SELECT id, time, phonenum, delay, digits FROM phonecalls";
+		List<PhoneCall> phonecalls  = jdbcTemplate.query(sql,
+				new BeanPropertyRowMapper<PhoneCall>(PhoneCall.class));
+		ModelAndView mav = new ModelAndView("index");
+		mav.addObject("phonecalls", phonecalls);
+		return mav;
 	}
 	
 	/**
@@ -139,7 +147,7 @@ public class PhoneBuzzController {
 	 */
 	@RequestMapping("/simple")
 	public ResponseEntity<?> simple(HttpServletRequest req,
-			@RequestParam(value="delay", required=false, defaultValue="-2") String delay) {
+			@RequestParam(value="delay", required=false, defaultValue="0") String delay) {
 		
 		
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
@@ -193,7 +201,7 @@ public class PhoneBuzzController {
 	public ResponseEntity<?> phonebuzz(
 			@RequestParam(value="Digits", required=false, defaultValue=DIGITS_DEFAULT) String digits,
 			@RequestParam(value="To", required=true) String target,
-			@RequestParam(value="delay", required=false, defaultValue="-1") String delay,
+			@RequestParam(value="delay", required=false, defaultValue="0") String delay,
 			HttpServletRequest req){
 		ResponseEntity<String> resp = new ResponseEntity<String>(HttpStatus.NO_CONTENT);
 		TwiMLResponse twiml = new TwiMLResponse();
@@ -206,7 +214,7 @@ public class PhoneBuzzController {
 
 			Timestamp time = new Timestamp((new Date()).getTime());
 			
-			String sql = "INSERT INTO replays(time, phoneNum, delay, digits) "+
+			String sql = "INSERT INTO phonecalls(time, phoneNum, delay, digits) "+
 					"VALUES(?, ?, ?, ?)";
 			jdbcTemplate.update(sql, time, target, Integer.parseInt(delay), Integer.parseInt(digits));
 			

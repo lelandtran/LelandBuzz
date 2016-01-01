@@ -1,0 +1,18 @@
+Leland's PhoneBuzz Web Application
+Submission for LendUp Coding Challenge
+
+Progress: 
+	Phase 1 - complete
+	Phase 2 - complete
+	Phase 3 - complete
+	Phase 4 - view displays phone call logs
+
+The application is hosted on: http://lelandbuzz.herokuapp.com/
+
+To run the web application:
+cd path/to/LelandBuzz
+java -jar target/LelandBuzz-0.0.1-SNAPSHOT.jar
+
+Notes: 
+-Run it from the LelandBuzz directory so that the jar file can use the application.properties file in the LelandBuzz/config directory as Spring allows. This will create a proper connection to the Postgres database hosted on Heroku
+-During testing of Phase 1, the first call to the Twilio phone number after a few hours resulted in a network failure application error. After trying to call again, the call goes through to the TwiML document.
